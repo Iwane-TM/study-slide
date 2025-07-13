@@ -135,7 +135,7 @@
           return;
         }
         const index = Math.floor(Math.random() * filtered.length);
-        document.getElementById('display').textContent = filtered[index].text;
+        document.getElementById('display').innerHTML = filtered[index].text.replace(/\n/g, "<br>");
       }, 5000);
     }
 
