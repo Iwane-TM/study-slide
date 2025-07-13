@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スプレッドシート表示アプリ</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+      background: #ddd;
+      gap: 10px;
+      justify-content: center;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #4285f4;
+      color: white;
+      cursor: pointer;
+    }
+    button.active {
+      background-color: #0b66c3;
+    }
+    #display {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3vw;
+      text-align: center;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="controls">
+    <!-- ジャンルボタン（動的生成） -->
+    <div id="genre-buttons"></div>
+
+    <!-- ユーザーボタン（静的） -->
+    <div id="user-buttons">
+      <button onclick="setUser('all')" class="active">全ユーザー</button>
+      <button onclick="setUser('m')">m</button>
+      <button onclick="setUser('r')">r</button>
+    </div>
+  </div>
+
+  <div id="display">読み込み中...</div>
+
+  <script>
+    const sheetId = "1WQDax-1jEnWxtbzhtXxZULhnqxNoQDdb_hN8yxxG_G4";
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+    let data = [];
+    let filtered = [];
+    let genre = 'all';
+    let user = 'all';
+
+    async function fetchData() {
+      const res = await fetch(url);
+      const text = await res.text();
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      const rows = json.table.rows;
+
+      data = rows.map(r => ({
+        text: r.c[0]?.v || "",
+        genre: r.c[1]?.v || "",
+        user: r.c[2]?.v || ""
+      })).filter(r => r.text); // A列が空なら除外
+
+      generateGenreButtons();
+      applyFilter();
+      rotate();
+    }
+
+    function generateGenreButtons() {
+      const genres = [...new Set(data.map(r => r.genre))];
+      const container = document.getElementById('genre-buttons');
+      container.innerHTML = '';
+      const allBtn = document.createElement('button');
+      allBtn.textContent = '全ジャンル';
+      allBtn.onclick = () => setGenre('all');
+      allBtn.classList.add('active');
+      container.appendChild(allBtn);
+
+      genres.forEach(g => {
+        const btn = document.createElement('button');
+        btn.textContent = g;
+        btn.onclick = () => setGenre(g);
+        container.appendChild(btn);
+      });
+    }
+
+    function setGenre(g) {
+      genre = g;
+      highlightActive('genre-buttons', g === 'all' ? '全ジャンル' : g);
+      applyFilter();
+    }
+
+    function setUser(u) {
+      user = u;
+      highlightActive('user-buttons', u === 'all' ? '全ユーザー' : u);
+      applyFilter();
+    }
+
+    function highlightActive(containerId, label) {
+      const btns = document.getElementById(containerId).querySelectorAll('button');
+      btns.forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === label);
+      });
+    }
+
+    function applyFilter() {
+      filtered = data.filter(r =>
+        (genre === 'all' || r.genre === genre) &&
+        (user === 'all' || r.user === user)
+      );
+    }
+
+    function rotate() {
+      setInterval(() => {
+        if (filtered.length === 0) {
+          document.getElementById('display').textContent = "該当なし";
+          return;
+        }
+        const index = Math.floor(Math.random() * filtered.length);
+        document.getElementById('display').textContent = filtered[index].text;
+      }, 5000);
+    }
+
+    fetchData();
+  </script>
+</body>
+</html>
