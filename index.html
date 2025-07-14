@@ -205,7 +205,20 @@
 
     function handleClick() {
       if (mode === 'manual') {
-        showRandomQA();
+        const r = filtered[currentIndex];
+        if (state === 'question') {
+        // すでに問題表示済 → 答えを表示
+        answerEl.innerHTML = r.answer.replace(/\n/g, "<br>");
+        state = 'answer';
+        } else {
+        // 次の問題に切り替え（ランダム）
+        const newIndex = Math.floor(Math.random() * filtered.length);
+        currentIndex = newIndex;
+        const next = filtered[currentIndex];
+        questionEl.innerHTML = next.question.replace(/\n/g, "<br>");
+        answerEl.innerHTML = "";
+        state = 'question';
+        }
       }
     }
 
